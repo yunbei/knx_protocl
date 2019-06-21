@@ -5,6 +5,9 @@ typedef unsigned char UINT8;
 typedef unsigned short UINT16;
 typedef UINT16 ADDRESS;
 typedef unsigned char* DATA_TYPE;
+typedef UINT16 OBJ_TYPE;
+typedef UINT16 PID_TYPE;
+typedef UINT8 TESTINFO_TYPE;
 
 typedef struct {
     UINT8 ctrl;     //  octect 0
@@ -16,6 +19,7 @@ typedef struct {
     unsigned int  tl_ctrl:6;
     unsigned int ap_ci:4;
     unsigned int ap_ci_data:6;
+    unsigned char data[14];
 
 } FRAME_LAYOUT;
 
@@ -208,10 +212,16 @@ typedef struct {
     // int octet_count;
     MEDIA_ACCESS_PRIORITY priority;  // TODO: need redefine type
     ASAP asap;
-    DATA_TYPE asdu;  // TODO: need redefine type
+    // DATA_TYPE asdu;  // TODO: need redefine type
 
     // ADDRESS source_address;
 } AL_CALL_PARAM;
+
+typedef struct {
+    int less_than_6bits;
+    unsigned int len;
+    unsigned char data[14];
+} AL_APP_VALUE;
 
 typedef struct {
     // A_GroupValue_Read-service
