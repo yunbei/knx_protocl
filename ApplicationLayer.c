@@ -25,7 +25,9 @@ ASAP AL_tsap2asap(TSAP tsap)
 }
 
 static AL_INF *AL_inf;
-static AL_PARAMETER AL_param;
+
+// TODO: use AL parameter;
+// static AL_PARAMETER AL_param;
 
 // A_GroupValue_Read-service
 static int AL_groupValueRead_req(AL_CALL_PARAM *param, ACK_REQUEST ack_request)
@@ -37,11 +39,14 @@ static int AL_groupValueRead_req(AL_CALL_PARAM *param, ACK_REQUEST ack_request)
     t_param.priority = param->priority;
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
+    t_param.octet_count = 1;
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
     fl->ap_ci = 0;
     fl->ap_ci_data = 0;
 
     tl->dataGroup_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_groupValueRead_lcon(AL_CALL_PARAM *param, int n_status)
@@ -56,7 +61,7 @@ static void AL_groupValueRead_ind(AL_CALL_PARAM *param)
 
 static int AL_groupValueRead_res(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_REQUEST ack_request)
 {
-    if (value == NULL || value->data == NULL) {
+    if (value == NULL) {
         // TODO: error handle
     }
 
@@ -72,7 +77,6 @@ static int AL_groupValueRead_res(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_
     if (value->less_than_6bits) {
         fl->ap_ci_data = *value->data;
         t_param.octet_count = 7;
-        t_param.octet_count = 7;
     } else {
         fl->ap_ci_data = 0;
         memcpy(t_param.tsdu+7, value->data, value->len);
@@ -80,6 +84,8 @@ static int AL_groupValueRead_res(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_
     }
 
     tl->dataGroup_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_groupValueRead_rcon(AL_CALL_PARAM *param, int n_status)
@@ -113,6 +119,8 @@ static int AL_groupValueWrite_req(AL_CALL_PARAM *param,  AL_APP_VALUE *value, AC
     }
 
     tl->dataGroup_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_groupValueWrite_lcon(AL_CALL_PARAM *param, int n_status)
@@ -149,6 +157,8 @@ static int AL_IndividualAddressWrite_req(AL_CALL_PARAM *param, ADDRESS newaddres
     t_param.octet_count = 7 + 2;
 
     tl->dataBroadcast_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_IndividualAddressWrite_lcon(AL_CALL_PARAM *param, int n_status)
@@ -182,6 +192,8 @@ static int AL_IndividualAddressRead_req(AL_CALL_PARAM *param, ACK_REQUEST ack_re
     t_param.octet_count = 7;
 
     tl->dataBroadcast_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_IndividualAddressRead_lcon(AL_CALL_PARAM *param, int n_status)
@@ -211,6 +223,8 @@ static int AL_IndividualAddressRead_res(AL_CALL_PARAM *param, ADDRESS newaddress
     t_param.octet_count = 7 + 2;
 
     tl->dataBroadcast_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_IndividualAddressRead_rcon(AL_CALL_PARAM *param, int n_status)
@@ -248,6 +262,8 @@ static int AL_SystemNetworkParameterRead_req(AL_CALL_PARAM *param, OBJ_TYPE obje
     t_param.octet_count = 7 + 5;
 
     tl->dataBroadcast_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_SystemNetworkParameterRead_lcon(AL_CALL_PARAM *param, int n_status)
@@ -286,6 +302,8 @@ static int AL_SystemNetworkParameterRead_res(AL_CALL_PARAM *param, OBJ_TYPE obje
     }
 
     tl->dataBroadcast_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_SystemNetworkParameterRead_rcon(AL_CALL_PARAM *param, int n_status)
@@ -324,6 +342,8 @@ static int AL_SystemNetworkParameterWrite_req(AL_CALL_PARAM *param, OBJ_TYPE obj
     t_param.octet_count = 7 + 4 + len;
 
     tl->dataBroadcast_req(&t_param, ack_request);
+
+    return 0;
 }
 
 static void AL_SystemNetworkParameterWrite_lcon(AL_CALL_PARAM *param, int n_status)
@@ -404,7 +424,11 @@ static void AL_IndividualAddressSerialNumberRead_acon(AL_CALL_PARAM *param, ADDR
 
 // CALLBACK
 // Data_Group Service
-static void AL_dataGroup_con_cb(TL_CALL_PARAM *param, int n_status);
+static void AL_dataGroup_con_cb(TL_CALL_PARAM *param, int n_status)
+{
+    // TODO:
+}
+
 static void AL_dataGroup_ind_cb(TL_CALL_PARAM *param)
 {
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)param->tsdu;
@@ -447,11 +471,22 @@ static void AL_dataGroup_ind_cb(TL_CALL_PARAM *param)
 
 
 // Data_Tag_Group service
-static void AL_dataTagGroup_con_cb(TL_CALL_PARAM *param, int n_status);
-static void AL_dataTagGroup_ind_cb(TL_CALL_PARAM *param);
+static void AL_dataTagGroup_con_cb(TL_CALL_PARAM *param, int n_status)
+{
+    // TODO:
+}
+
+static void AL_dataTagGroup_ind_cb(TL_CALL_PARAM *param)
+{
+    // TODO:
+}
 
 // Data_Broadcast Service
-static void AL_dataBroadcast_con_cb(TL_CALL_PARAM *param, int n_status);
+static void AL_dataBroadcast_con_cb(TL_CALL_PARAM *param, int n_status)
+{
+    // TODO:
+}
+
 static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
 {
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)param->tsdu;
@@ -530,24 +565,59 @@ static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
 }
 
 // T_Data_SystemBroadcast
-static void AL_dataSystemBroadcast_con_cb(TL_CALL_PARAM *param, int n_status);
-static void AL_dataSystemBroadcast_ind_cb(TL_CALL_PARAM *param);
+static void AL_dataSystemBroadcast_con_cb(TL_CALL_PARAM *param, int n_status)
+{
+    // TODO:
+}
+
+static void AL_dataSystemBroadcast_ind_cb(TL_CALL_PARAM *param)
+{
+    // TODO:
+}
 
 // T_Data_Individual
-static void AL_dataIndividual_con_cb(TL_CALL_PARAM *param, int n_status);
-static void AL_dataIndividual_ind_cb(TL_CALL_PARAM *param);
+static void AL_dataIndividual_con_cb(TL_CALL_PARAM *param, int n_status)
+{
+    // TODO:
+}
+
+static void AL_dataIndividual_ind_cb(TL_CALL_PARAM *param)
+{
+    // TODO:
+}
 
 // T_Connect Service
-static void AL_connect_con_cb(ADDRESS destination_address, TSAP tsap, int n_status);
-static void AL_connect_ind_cb(TSAP tsap);
+static void AL_connect_con_cb(ADDRESS destination_address, TSAP tsap, int n_status)
+{
+    // TODO:
+}
+
+static void AL_connect_ind_cb(TSAP tsap)
+{
+    // TODO:
+}
 
 // T_Disconnect Service
-static void AL_disconnect_con_cb(ADDRESS destination_address, TSAP tsap, int n_status);
-static void AL_disconnect_ind_cb(TSAP tsap);
+static void AL_disconnect_con_cb(ADDRESS destination_address, TSAP tsap, int n_status)
+{
+    // TODO:
+}
+
+static void AL_disconnect_ind_cb(TSAP tsap)
+{
+    // TODO:
+}
 
 // T_Data_Connected Service
-static void AL_dataConnected_con_cb(TSAP tsap);
-static void AL_dataConnected_ind_cb(int octet_count, MEDIA_ACCESS_PRIORITY priority, TSAP tsap, DATA_TYPE tsdu);
+static void AL_dataConnected_con_cb(TSAP tsap)
+{
+    // TODO:
+}
+
+static void AL_dataConnected_ind_cb(int octet_count, MEDIA_ACCESS_PRIORITY priority, TSAP tsap, DATA_TYPE tsdu)
+{
+    // TODO:
+}
 
 
 AL_INF* AL_getInterface()
@@ -558,5 +628,62 @@ AL_INF* AL_getInterface()
 void AL_init()
 {
     AL_inf = (AL_INF *)malloc(sizeof(AL_inf));
+
     // TODO: init default interface member
+    AL_inf->groupValueRead_req = AL_groupValueRead_req;
+    AL_inf->groupValueRead_lcon = AL_groupValueRead_lcon;
+    AL_inf->groupValueRead_ind = AL_groupValueRead_ind;
+    AL_inf->groupValueRead_res = AL_groupValueRead_res;
+    AL_inf->groupValueRead_rcon = AL_groupValueRead_rcon;
+    AL_inf->groupValueRead_acon = AL_groupValueRead_acon;
+
+    AL_inf->groupValueWrite_req = AL_groupValueWrite_req;
+    AL_inf->groupValueWrite_lcon = AL_groupValueWrite_lcon;
+    AL_inf->groupValueWrite_ind = AL_groupValueWrite_ind;
+
+    AL_inf->IndividualAddressWrite_req = AL_IndividualAddressWrite_req;
+    AL_inf->IndividualAddressWrite_lcon = AL_IndividualAddressWrite_lcon;
+    AL_inf->IndividualAddressWrite_ind = AL_IndividualAddressWrite_ind;
+
+    AL_inf->IndividualAddressRead_req = AL_IndividualAddressRead_req;
+    AL_inf->IndividualAddressRead_lcon = AL_IndividualAddressRead_lcon;
+    AL_inf->IndividualAddressRead_ind = AL_IndividualAddressRead_ind;
+    AL_inf->IndividualAddressRead_res = AL_IndividualAddressRead_res;
+    AL_inf->IndividualAddressRead_rcon = AL_IndividualAddressRead_rcon;
+    AL_inf->IndividualAddressRead_acon = AL_IndividualAddressRead_acon;
+
+    AL_inf->SystemNetworkParameterRead_req = AL_SystemNetworkParameterRead_req;
+    AL_inf->SystemNetworkParameterRead_lcon = AL_SystemNetworkParameterRead_lcon;
+    AL_inf->SystemNetworkParameterRead_ind = AL_SystemNetworkParameterRead_ind;
+    AL_inf->SystemNetworkParameterRead_res = AL_SystemNetworkParameterRead_res;
+    AL_inf->SystemNetworkParameterRead_rcon = AL_SystemNetworkParameterRead_rcon;
+    AL_inf->SystemNetworkParameterRead_acon = AL_SystemNetworkParameterRead_acon;
+
+    AL_inf->SystemNetworkParameterWrite_req = AL_SystemNetworkParameterWrite_req;
+    AL_inf->SystemNetworkParameterWrite_lcon = AL_SystemNetworkParameterWrite_lcon;
+    AL_inf->SystemNetworkParameterWrite_ind = AL_SystemNetworkParameterWrite_ind;
+
+    AL_inf->dataGroup_con_cb = AL_dataGroup_con_cb;
+    AL_inf->dataGroup_ind_cb = AL_dataGroup_ind_cb;
+
+    AL_inf->dataTagGroup_con_cb = AL_dataTagGroup_con_cb;
+    AL_inf->dataTagGroup_ind_cb = AL_dataTagGroup_ind_cb;
+
+    AL_inf->dataBroadcast_con_cb = AL_dataBroadcast_con_cb;
+    AL_inf->dataBroadcast_ind_cb = AL_dataBroadcast_ind_cb;
+
+    AL_inf->dataSystemBroadcast_con_cb = AL_dataSystemBroadcast_con_cb;
+    AL_inf->dataSystemBroadcast_ind_cb = AL_dataSystemBroadcast_ind_cb;
+
+    AL_inf->dataIndividual_con_cb = AL_dataIndividual_con_cb;
+    AL_inf->dataIndividual_ind_cb = AL_dataIndividual_ind_cb;
+
+    AL_inf->connect_con_cb = AL_connect_con_cb;
+    AL_inf->connect_ind_cb = AL_connect_ind_cb;
+
+    AL_inf->disconnect_con_cb = AL_disconnect_con_cb;
+    AL_inf->disconnect_ind_cb = AL_disconnect_ind_cb;
+
+    AL_inf->dataConnected_con_cb = AL_dataConnected_con_cb;
+    AL_inf->dataConnected_ind_cb = AL_dataConnected_ind_cb;
 }

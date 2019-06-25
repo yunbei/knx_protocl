@@ -15,7 +15,7 @@ typedef struct {
 } DL_PARAMETER;
 
 static DL_INF *DL_inf;
-static DL_PARAMETER DL_param;
+// static DL_PARAMETER DL_param;
 
 // L_Data service
 static int DL_data_req(DL_CALL_PARAM *param, ACK_REQUEST ack_request)
@@ -152,3 +152,10 @@ void DL_init()
     DL_inf->busmon_ind = DL_busmon_ind;
     DL_inf->serviceInformation_ind = DL_serviceInformation_ind;
 }
+
+static int DL_fd;
+void DL_SetMockFd(int fd)
+{
+    DL_fd = fd;
+}
+

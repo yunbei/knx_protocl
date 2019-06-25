@@ -14,7 +14,7 @@ typedef struct {
 } TL_PARAMETER;
 
 static TL_INF *TL_inf;
-static TL_PARAMETER TL_param;
+// static TL_PARAMETER TL_param;
 
 ADDRESS TL_tsap2addr(TSAP tsap)
 {
@@ -290,8 +290,14 @@ void TL_init()
     TL_inf->dataSystemBroadcast_req = TL_dataSystemBroadcast_req;
     TL_inf->dataSystemBroadcast_con = TL_dataSystemBroadcast_con;
     TL_inf->dataSystemBroadcast_ind = TL_dataSystemBroadcast_ind;
+    TL_inf->dataIndividual_req = TL_dataIndividual_req;
+    TL_inf->dataIndividual_con = TL_dataIndividual_con;
+    TL_inf->dataIndividual_ind = TL_dataIndividual_ind;
 
     TL_inf->connect_req = TL_connect_req;
     TL_inf->connect_con = TL_connect_con;
     TL_inf->connect_ind = TL_connect_ind;
+    TL_inf->disconnect_req = TL_disconnect_req;
+    TL_inf->disconnect_con = TL_disconnect_con;
+    TL_inf->disconnect_ind = TL_disconnect_ind;
 }

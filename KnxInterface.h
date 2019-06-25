@@ -1,6 +1,11 @@
 #ifndef KNX_INTERFACE_H
 #define KNX_INTERFACE_H
 
+#include <stdio.h>
+
+#define DEBUG(fmt,arg...) \
+printf(fmt, ##arg)
+
 typedef unsigned char UINT8;
 typedef unsigned short UINT16;
 typedef UINT16 ADDRESS;
@@ -20,12 +25,11 @@ typedef struct {
     unsigned int ap_ci:4;
     unsigned int ap_ci_data:6;
     unsigned char data[14];
-
 } FRAME_LAYOUT;
 
 DATA_TYPE pdu_alloc();
 
-// Phyical Layer definition
+// Physical Layer definition
 // -----------------------------------------------------------
 
 typedef enum {
@@ -88,6 +92,7 @@ typedef struct {
 
 void DL_init();
 DL_INF* DL_getInterface();
+void DL_SetMockFd(int fd);
 
 // Network Layer definition
 // -----------------------------------------------------------
@@ -180,7 +185,7 @@ typedef struct {
     void (*dataIndividual_ind)(TL_CALL_PARAM *param);
 
     // T_Connect Service
-    int (*connect_req)(ADDRESS destination_address, ACK_REQUEST ack_request);
+    int (*connect_req)(ADDRESS destination_address, MEDIA_ACCESS_PRIORITY priority);
     void (*connect_con)(ADDRESS destination_address, TSAP tsap, int n_status);
     void (*connect_ind)(TSAP tsap);
 
@@ -228,9 +233,40 @@ typedef struct {
     int (*groupValueRead_req)(AL_CALL_PARAM *param, ACK_REQUEST ack_request);
     void (*groupValueRead_lcon)(AL_CALL_PARAM *param, int n_status);
     void (*groupValueRead_ind)(AL_CALL_PARAM *param);
-    int (*groupValueRead_res)(AL_CALL_PARAM *param, ACK_REQUEST ack_request);
+    int (*groupValueRead_res)(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_REQUEST ack_request);
     void (*groupValueRead_rcon)(AL_CALL_PARAM *param, int n_status);
-    void (*groupValueRead_acon)(AL_CALL_PARAM *param);
+    void (*groupValueRead_acon)(AL_CALL_PARAM *param, AL_APP_VALUE *value);
+
+    // A_GroupValue_Write-service
+    int (*groupValueWrite_req)(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_REQUEST ack_request);
+    void (*groupValueWrite_lcon)(AL_CALL_PARAM *param, int n_status);
+    void (*groupValueWrite_ind)(AL_CALL_PARAM *param, AL_APP_VALUE *value);
+
+    // A_IndividualAddress_Write-service
+    int (*IndividualAddressWrite_req)(AL_CALL_PARAM *param, ADDRESS newaddress, ACK_REQUEST ack_request);
+    void (*IndividualAddressWrite_lcon)(AL_CALL_PARAM *param, int n_status);
+    void (*IndividualAddressWrite_ind)(AL_CALL_PARAM *param, ADDRESS newaddress);
+
+    // A_IndividualAddress_Read-service
+    int (*IndividualAddressRead_req)(AL_CALL_PARAM *param, ACK_REQUEST ack_request);
+    void (*IndividualAddressRead_lcon)(AL_CALL_PARAM *param, int n_status);
+    void (*IndividualAddressRead_ind)(AL_CALL_PARAM *param);
+    int (*IndividualAddressRead_res)(AL_CALL_PARAM *param, ADDRESS newaddress, ACK_REQUEST ack_request);
+    void (*IndividualAddressRead_rcon)(AL_CALL_PARAM *param, int n_status);
+    void (*IndividualAddressRead_acon)(AL_CALL_PARAM *param, ADDRESS newaddress);
+
+    // A_SystemNetworkParameter_Read
+    int (*SystemNetworkParameterRead_req)(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, TESTINFO_TYPE test_info, ACK_REQUEST ack_request);
+    void (*SystemNetworkParameterRead_lcon)(AL_CALL_PARAM *param, int n_status);
+    void (*SystemNetworkParameterRead_ind)(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, TESTINFO_TYPE test_info);
+    int (*SystemNetworkParameterRead_res)(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, TESTINFO_TYPE test_info, DATA_TYPE test_result, size_t result_len, ACK_REQUEST ack_request);
+    void (*SystemNetworkParameterRead_rcon)(AL_CALL_PARAM *param, int n_status);
+    void (*SystemNetworkParameterRead_acon)(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, TESTINFO_TYPE test_info, DATA_TYPE test_result, size_t result_len);
+
+    // A_SystemNetworkParameter_Write
+    int (*SystemNetworkParameterWrite_req)(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, DATA_TYPE value, size_t len, ACK_REQUEST ack_request);
+    void (*SystemNetworkParameterWrite_lcon)(AL_CALL_PARAM *param, int n_status);
+    void (*SystemNetworkParameterWrite_ind)(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, DATA_TYPE value, size_t len);
 
     // CALLBACK
     // Data_Group Service
