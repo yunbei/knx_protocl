@@ -136,10 +136,11 @@ static int NL_dataGroup_req(NL_CALL_PARAM *param, ACK_REQUEST ack_request)
     d_param.lsdu = param->nsdu;
     d_param.octet_count = param->octet_count;
     d_param.priority = param->priority;
-    d_param.source_address = 0; // TODO: whereis source address come from ???
+    d_param.source_address = param->source_address; // TODO: whereis source address come from ???
 
     //  FIXME: set hop count
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)param->nsdu;
+    DEBUG("NL_dataGroup_req %d \n", NL_param.hop_count);
     fl->hop_count = param->hop_count_type == HOP_COUNT_7 ? 7 : NL_param.hop_count;
 
     dl->data_req(&d_param, ack_request);
@@ -176,6 +177,9 @@ static void NL_dataGroup_ind(NL_CALL_PARAM *param)
     t_param.priority = param->priority;
     t_param.tsap = TL_addr2tsap(param->destination_address);
     t_param.source_address = param->source_address;
+    t_param.tsdu = param->nsdu;
+
+    DEBUG("NL_dataGroup_ind %p\n", param->nsdu);
 
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)param->nsdu;
     if (fl->tl_ctrl == 0) {
@@ -307,4 +311,11 @@ void NL_init()
     NL_inf->dataSystemBroadcast_req = NL_dataSystemBroadcast_req;
     NL_inf->dataSystemBroadcast_con = NL_dataSystemBroadcast_con;
     NL_inf->dataSystemBroadcast_ind = NL_dataSystemBroadcast_ind;
+}
+
+
+// MOCK function
+void MOCK_setHop(UINT8 hop)
+{
+    NL_param.hop_count = hop;
 }

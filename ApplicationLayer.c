@@ -4,30 +4,62 @@
 #include "KnxInterface.h"
 
 typedef struct {
-
-} GroupAddrAssociationTable[100];
+    UINT8 entity[200];
+} GroupAddrAssociationTable;
 
 typedef struct {
-    GroupAddrAssociationTable gaat;
+    GroupAddrAssociationTable groat;
     int verify_flag;
 } AL_PARAMETER;
 
+static AL_INF *AL_inf;
+
+static AL_PARAMETER AL_param;
+
+// for MOCK
+static int AL_groupValueRead_res(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_REQUEST ack_request);
+
 TSAP AL_aspa2tsap(ASAP asap)
 {
-    // TODO:
-    return asap;
+    UINT8 *entity = AL_param.groat.entity;
+    for (TSAP i = 0; i < entity[0]; i++) {
+        if (entity[2*i+2] == asap) {
+            return entity[2*i+1];
+        }
+    }
+
+    return ASAP_FAIL;
 }
 
 ASAP AL_tsap2asap(TSAP tsap)
 {
-    // TODO:
-    return tsap;
+    UINT8 *entity = AL_param.groat.entity;
+    for (TSAP i = 0; i < entity[0]; i++) {
+        if (entity[2*i+1] == tsap) {
+            return entity[2*i+2];
+        }
+    }
+
+    return ASAP_FAIL;
 }
 
-static AL_INF *AL_inf;
 
-// TODO: use AL parameter;
-// static AL_PARAMETER AL_param;
+
+static void AL_param_init()
+{
+    memset(&AL_param, 0, sizeof(AL_param));
+}
+
+void AL_setAPCI(FRAME_LAYOUT *fl, unsigned int value)
+{
+    fl->ap_ci_h = (value>2)&0b11;
+    fl->ap_ci_l = value&0b11;
+}
+
+static int AL_getAPCI(FRAME_LAYOUT *fl)
+{
+    return fl->ap_ci_h<<2|fl->ap_ci_l;
+}
 
 // A_GroupValue_Read-service
 static int AL_groupValueRead_req(AL_CALL_PARAM *param, ACK_REQUEST ack_request)
@@ -41,7 +73,8 @@ static int AL_groupValueRead_req(AL_CALL_PARAM *param, ACK_REQUEST ack_request)
     t_param.tsdu = pdu_alloc();
     t_param.octet_count = 1;
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 0;
+    // fl->ap_ci = 0;
+    AL_setAPCI(fl, 0);
     fl->ap_ci_data = 0;
 
     tl->dataGroup_req(&t_param, ack_request);
@@ -57,6 +90,16 @@ static void AL_groupValueRead_lcon(AL_CALL_PARAM *param, int n_status)
 static void AL_groupValueRead_ind(AL_CALL_PARAM *param)
 {
     // TODO:
+    DEBUG("AL_SystemNetworkParameterRead_ind %x, %x\n", param->asap, param->hop_count_type);
+    // for MOCK
+    AL_CALL_PARAM a_param;
+    a_param.asap = 1;
+    a_param.hop_count_type = HOP_COUNT_7;
+    a_param.priority = PRIORITY_LOW;
+    AL_APP_VALUE value;
+    value.less_than_6bits = 1;
+    value.data[0] = 3;
+    AL_groupValueRead_res(&a_param, &value, ACK_DONT_CARE);
 }
 
 static int AL_groupValueRead_res(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_REQUEST ack_request)
@@ -73,14 +116,15 @@ static int AL_groupValueRead_res(AL_CALL_PARAM *param, AL_APP_VALUE *value, ACK_
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 1;
+    // fl->ap_ci = 1;
+    AL_setAPCI(fl, 1);
     if (value->less_than_6bits) {
         fl->ap_ci_data = *value->data;
-        t_param.octet_count = 7;
+        t_param.octet_count = 1;
     } else {
         fl->ap_ci_data = 0;
         memcpy(t_param.tsdu+7, value->data, value->len);
-        t_param.octet_count = 7 + value->len;
+        t_param.octet_count = value->len;
     }
 
     tl->dataGroup_req(&t_param, ack_request);
@@ -109,7 +153,8 @@ static int AL_groupValueWrite_req(AL_CALL_PARAM *param,  AL_APP_VALUE *value, AC
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 2;
+    // fl->ap_ci = 2;
+    AL_setAPCI(fl, 2);
     if (value->less_than_6bits) {
         fl->ap_ci_data = *value->data;
     } else {
@@ -149,7 +194,8 @@ static int AL_IndividualAddressWrite_req(AL_CALL_PARAM *param, ADDRESS newaddres
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 3;
+    // fl->ap_ci = 3;
+    AL_setAPCI(fl, 3);
 
     fl->ap_ci_data = 0;
     fl->data[0] = newaddress>>8;
@@ -186,7 +232,8 @@ static int AL_IndividualAddressRead_req(AL_CALL_PARAM *param, ACK_REQUEST ack_re
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 4;
+    // fl->ap_ci = 4;
+    AL_setAPCI(fl, 4);
 
     fl->ap_ci_data = 0;
     t_param.octet_count = 7;
@@ -216,7 +263,8 @@ static int AL_IndividualAddressRead_res(AL_CALL_PARAM *param, ADDRESS newaddress
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 5;
+    // fl->ap_ci = 5;
+    AL_setAPCI(fl, 5);
     fl->ap_ci_data = 0;
     fl->data[0] = newaddress>>8;
     fl->data[1] = newaddress&0xff;
@@ -252,7 +300,8 @@ static int AL_SystemNetworkParameterRead_req(AL_CALL_PARAM *param, OBJ_TYPE obje
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 7;
+    // fl->ap_ci = 7;
+    AL_setAPCI(fl, 7);
     fl->ap_ci_data = 8;
     fl->data[0] = object_type>>8;
     fl->data[1] = object_type&0xff;
@@ -274,6 +323,7 @@ static void AL_SystemNetworkParameterRead_lcon(AL_CALL_PARAM *param, int n_statu
 static void AL_SystemNetworkParameterRead_ind(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, TESTINFO_TYPE test_info)
 {
     // TODO:
+    DEBUG("AL_SystemNetworkParameterRead_ind %x, %x\n", object_type, pid);
 }
 
 static int AL_SystemNetworkParameterRead_res(AL_CALL_PARAM *param, OBJ_TYPE object_type, PID_TYPE pid, TESTINFO_TYPE test_info, DATA_TYPE test_result, size_t result_len, ACK_REQUEST ack_request)
@@ -286,7 +336,8 @@ static int AL_SystemNetworkParameterRead_res(AL_CALL_PARAM *param, OBJ_TYPE obje
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 7;
+    // fl->ap_ci = 7;
+    AL_setAPCI(fl, 7);
     fl->ap_ci_data = 9;
     fl->data[0] = object_type>>8;
     fl->data[1] = object_type&0xff;
@@ -331,7 +382,8 @@ static int AL_SystemNetworkParameterWrite_req(AL_CALL_PARAM *param, OBJ_TYPE obj
     t_param.tsap = AL_aspa2tsap(param->asap);
     t_param.tsdu = pdu_alloc();
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)t_param.tsdu;
-    fl->ap_ci = 7;
+    // fl->ap_ci = 7;
+    AL_setAPCI(fl, 7);
     fl->ap_ci_data = 10;
 
     fl->data[0] = object_type>>8;
@@ -433,14 +485,17 @@ static void AL_dataGroup_ind_cb(TL_CALL_PARAM *param)
 {
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)param->tsdu;
 
-    if (fl->ap_ci == 0 && fl->ap_ci_data == 0) {    // A_GroupValue_Read-PDU
+    DEBUG("AL_dataGroup_ind_cb %p \n", fl);
+    int apci = AL_getAPCI(fl);
+    if (apci== 0 && fl->ap_ci_data == 0) {    // A_GroupValue_Read-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
         a_param.hop_count_type = param->hop_count_type;
         a_param.priority = param->priority;
+        DEBUG("AL_dataGroup_ind_cb 1\n");
         AL_groupValueRead_ind(&a_param);
-    } if (fl->ap_ci == 1) { // A_GroupValue_Response-PDU
+    } if (apci == 1) { // A_GroupValue_Response-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -452,7 +507,7 @@ static void AL_dataGroup_ind_cb(TL_CALL_PARAM *param)
         value.len = value.len == 0 ? 1 : value.len;
         memcpy(value.data, param->tsdu + 7, value.len);
         AL_groupValueRead_acon(&a_param, &value);
-    } if (fl->ap_ci == 2) { // A_GroupValue_Write-PDU
+    } if (apci == 2) { // A_GroupValue_Write-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -491,7 +546,8 @@ static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
 {
     FRAME_LAYOUT *fl = (FRAME_LAYOUT *)param->tsdu;
 
-    if (fl->ap_ci == 3) {   // A_IndividualAddress_Write-PDU
+    int apci = AL_getAPCI(fl);
+    if (apci == 3) {   // A_IndividualAddress_Write-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -500,14 +556,14 @@ static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
         ADDRESS newaddress;
         newaddress = fl->data[0] << 8 | fl->data[1];
         AL_IndividualAddressWrite_ind(&a_param, newaddress);
-    } else if (fl->ap_ci == 4) {  // A_IndividualAddress_Read-PDU
+    } else if (apci == 4) {  // A_IndividualAddress_Read-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
         a_param.hop_count_type = param->hop_count_type;
         a_param.priority = param->priority;
         AL_IndividualAddressRead_ind(&a_param);
-    } else if (fl->ap_ci == 5) {  // A_IndividualAddress_Response-PDU
+    } else if (apci == 5) {  // A_IndividualAddress_Response-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -516,7 +572,7 @@ static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
         ADDRESS newaddress;
         newaddress = fl->data[0] << 8 | fl->data[1];
         AL_IndividualAddressRead_acon(&a_param, newaddress);
-    } else if (fl->ap_ci == 7 && fl->ap_ci_data == 0x8) {  // A_SystemNetworkParameter_Read-PDU
+    } else if (apci == 7 && fl->ap_ci_data == 0x8) {  // A_SystemNetworkParameter_Read-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -528,7 +584,7 @@ static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
         // newaddress = fl->data[0] << 8 | fl->data[1];
 
         AL_SystemNetworkParameterRead_ind(&a_param, object_type, pid, test_info);
-    } else if (fl->ap_ci == 7 && fl->ap_ci_data == 0x9) {  // A_SystemNetworkParameter_Response-PDU
+    } else if (apci == 7 && fl->ap_ci_data == 0x9) {  // A_SystemNetworkParameter_Response-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -544,7 +600,7 @@ static void AL_dataBroadcast_ind_cb(TL_CALL_PARAM *param)
         // newaddress = fl->data[0] << 8 | fl->data[1];
 
         AL_SystemNetworkParameterRead_acon(&a_param, object_type, pid, test_info, test_result, fl->octect_count - 12);
-    } else if (fl->ap_ci == 7 && fl->ap_ci_data == 0x10) {  // A_SystemNetworkParameter_Write-PDU
+    } else if (apci == 7 && fl->ap_ci_data == 0x10) {  // A_SystemNetworkParameter_Write-PDU
         AL_CALL_PARAM a_param;
         a_param.asap = AL_tsap2asap(param->tsap);
         // a_param.asdu = param->tsdu;
@@ -627,7 +683,9 @@ AL_INF* AL_getInterface()
 
 void AL_init()
 {
-    AL_inf = (AL_INF *)malloc(sizeof(AL_inf));
+    AL_param_init();
+
+    AL_inf = (AL_INF *)malloc(sizeof(AL_INF));
 
     // TODO: init default interface member
     AL_inf->groupValueRead_req = AL_groupValueRead_req;
@@ -686,4 +744,14 @@ void AL_init()
 
     AL_inf->dataConnected_con_cb = AL_dataConnected_con_cb;
     AL_inf->dataConnected_ind_cb = AL_dataConnected_ind_cb;
+}
+
+// MOCK function
+void MOCK_addGrOAT(TSAP tsap, ASAP asap)
+{
+    UINT8 *entity = AL_param.groat.entity;
+    UINT8 len = entity[0];
+    entity[2*len+1] = tsap;
+    entity[2*len+2] = asap;
+    entity[0]++;
 }

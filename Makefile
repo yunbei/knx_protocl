@@ -1,7 +1,8 @@
 CC      = gcc
 CXX     = g++
 LINK    = g++
-CFLAGS  = -g -Wall -O2
+# CFLAGS  = -g -Wall -O2
+CFLAGS  = -g -Wall
 TARGET  = knx_stack
 SRCS    = $(wildcard *.cpp)
 SRCS    += $(wildcard *.c)

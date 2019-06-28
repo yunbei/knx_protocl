@@ -8,6 +8,7 @@ printf(fmt, ##arg)
 
 typedef unsigned char UINT8;
 typedef unsigned short UINT16;
+typedef unsigned int UINT32;
 typedef UINT16 ADDRESS;
 typedef unsigned char* DATA_TYPE;
 typedef UINT16 OBJ_TYPE;
@@ -18,16 +19,22 @@ typedef struct {
     UINT8 ctrl;     //  octect 0
     UINT16 source_addr; // octect 1-2
     UINT16 dest_addr;   // octect 3-4
-    unsigned int address_type:1; // octect 5
+    unsigned int octect_count:4; // octect 5
     unsigned int hop_count:3;
-    unsigned int octect_count:4;
-    unsigned int  tl_ctrl:6;
-    unsigned int ap_ci:4;
+    unsigned int address_type:1;
+    unsigned int ap_ci_h: 2;
+    unsigned int  tl_ctrl:6; // octect 6
     unsigned int ap_ci_data:6;
-    unsigned char data[14];
-} FRAME_LAYOUT;
+    unsigned int ap_ci_l:2;
+    unsigned char data[14]; // octect 8
+} __attribute__ ((packed)) FRAME_LAYOUT;
 
 DATA_TYPE pdu_alloc();
+void HexDump(void *v,int len,int addr);
+
+// #define LITTLE_ENDIAN 1
+#define ltons(addr) (LITTLE_ENDIAN ? (addr<<8)|(addr>>8) : addr)
+#define ntols(addr) (LITTLE_ENDIAN ? (addr<<8)|(addr>>8) : addr)
 
 // Physical Layer definition
 // -----------------------------------------------------------
@@ -41,7 +48,7 @@ typedef enum {
 // -----------------------------------------------------------
 
 typedef enum {
-    DONT_CARE = 0,
+    ACK_DONT_CARE = 0,
     ACK_REQUESTED = 1
 } ACK_REQUEST;
 
@@ -103,7 +110,6 @@ typedef enum {
     HOP_COUNT_NOT_EQL_7 // 'not equal to 7'
 } HOP_COUNT_TYPE;
 
-
 typedef struct {
     ADDRESS destination_address;
     HOP_COUNT_TYPE hop_count_type; // TODO: need redefine type
@@ -143,7 +149,8 @@ NL_INF* NL_getInterface();
 
 // Transport Layer definition
 // -----------------------------------------------------------
-typedef UINT16 TSAP;
+typedef UINT8 TSAP;
+#define TSAP_FAIL 0xFF
 
 typedef struct {
     HOP_COUNT_TYPE hop_count_type; // TODO: need redefine type
@@ -207,10 +214,12 @@ TL_INF* TL_getInterface();
 
 // Application Layer definition
 // -----------------------------------------------------------
-typedef UINT16 ASAP;
+typedef UINT8 ASAP;
+#define ASAP_FAIL 0xFF
 
 TSAP AL_asap2tsap(ASAP asap);
 ASAP AL_tsap2asap(TSAP tsap);
+void AL_setAPCI(FRAME_LAYOUT *fl, unsigned int value);
 
 typedef struct {
     HOP_COUNT_TYPE hop_count_type; // TODO: need redefine type
@@ -306,4 +315,14 @@ typedef struct {
 
 void AL_init();
 AL_INF* AL_getInterface();
+
+
+// MOCK function
+//------------------------------------------------------------
+void MOCK_setIndividualAddr(ADDRESS addr);
+void MOCK_addGrAT(ADDRESS addr);
+void MOCK_addGrOAT(TSAP tsap, ASAP asap);
+void MOCK_setHop(UINT8 hop);
+void MOCK_SetMockFd(int fd);
+void MOCK_revPacket(DATA_TYPE data, int len);
 #endif
